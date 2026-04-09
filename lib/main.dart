@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-/*
+
 import 'firebase_options.dart'; // Этот файл появится после flutterfire configure
 import 'screens/cards_screen.dart'; // Перенеси свой экран с карточками в этот файл
 import 'screens/auth_screen.dart';  // Это наш новый экран логина
-*/
+
 
 void main() async {
   // Обязательная строчка перед запуском Firebase

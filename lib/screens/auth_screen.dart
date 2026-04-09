@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/package:firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../services/auth_service.dart'; // Не забудь создать этот файл
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -9,47 +10,44 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> {
-  // Контроллеры для считывания текста из полей
+  final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _authService = AuthService();
 
-  bool _isLogin = true; // Переключатель: Вход или Регистрация
-  bool _isLoading = false; // Крутилка загрузки
+  bool _isLogin = true;
+  bool _isLoading = false;
 
-  // Главная функция авторизации
-  Future<void> _submitAuth() async {
+  Future<void> _submit() async {
+    // Валидация полей
+    if (!_formKey.currentState!.validate()) return;
+
     setState(() => _isLoading = true);
 
     try {
       if (_isLogin) {
-        // Попытка входа
-        await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: _emailController.text.trim(),
-          password: _passwordController.text.trim(),
+        await _authService.signIn(
+          _emailController.text.trim(),
+          _passwordController.text.trim(),
         );
       } else {
-        // Попытка регистрации
-        await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email: _emailController.text.trim(),
-          password: _passwordController.text.trim(),
+        await _authService.signUp(
+          _emailController.text.trim(),
+          _passwordController.text.trim(),
         );
       }
-      // Если всё успешно, StreamBuilder в main.dart сам перекинет нас на главный экран!
     } on FirebaseAuthException catch (e) {
-      // Если ошибка (неверный пароль, мыло занято) - показываем всплывашку
+      String message = 'Произошла ошибка';
+      if (e.code == 'user-not-found') message = 'Пользователь не найден';
+      else if (e.code == 'wrong-password') message = 'Неверный пароль';
+      else if (e.code == 'email-already-in-use') message = 'Этот Email уже занят';
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message ?? 'Произошла ошибка авторизации')),
+        SnackBar(content: Text(e.message ?? message)),
       );
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
-  }
-
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
   }
 
   @override
@@ -58,67 +56,45 @@ class _AuthScreenState extends State<AuthScreen> {
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Логотип или заголовок
-              Icon(Icons.record_voice_over, size: 80, color: Theme.of(context).primaryColor),
-              const SizedBox(height: 30),
-              Text(
-                _isLogin ? 'Добро пожаловать' : 'Создать аккаунт',
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 30),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                Icon(Icons.record_voice_over, size: 80, color: Theme.of(context).primaryColor),
+                const SizedBox(height: 30),
+                Text(_isLogin ? 'Вход' : 'Регистрация', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 30),
 
-              // Поле Email
-              TextField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.email),
+                TextFormField(
+                  controller: _emailController,
+                  decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder()),
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (value) => value == null || !value.contains('@') ? 'Введите корректный email' : null,
                 ),
-              ),
-              const SizedBox(height: 16),
+                const SizedBox(height: 16),
 
-              // Поле Пароль
-              TextField(
-                controller: _passwordController,
-                obscureText: true, // Скрывает пароль звездочками
-                decoration: const InputDecoration(
-                  labelText: 'Пароль',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.lock),
+                TextFormField(
+                  controller: _passwordController,
+                  decoration: const InputDecoration(labelText: 'Пароль', border: OutlineInputBorder()),
+                  obscureText: true,
+                  validator: (value) => value == null || value.length < 6 ? 'Пароль должен быть от 6 символов' : null,
                 ),
-              ),
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              // Кнопка Входа/Регистрации
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _submitAuth,
-                  child: _isLoading
-                      ? const CircularProgressIndicator()
-                      : Text(_isLogin ? 'Войти' : 'Зарегистрироваться', style: const TextStyle(fontSize: 18)),
+                _isLoading
+                    ? const CircularProgressIndicator()
+                    : ElevatedButton(
+                  onPressed: _submit,
+                  style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 50)),
+                  child: Text(_isLogin ? 'Войти' : 'Создать аккаунт'),
                 ),
-              ),
-              const SizedBox(height: 16),
 
-              // Кнопка переключения режимов (Вход <-> Регистрация)
-              TextButton(
-                onPressed: () {
-                  setState(() {
-                    _isLogin = !_isLogin;
-                  });
-                },
-                child: Text(_isLogin
-                    ? 'Нет аккаунта? Зарегистрируйтесь'
-                    : 'Уже есть аккаунт? Войти'),
-              ),
-            ],
+                TextButton(
+                  onPressed: () => setState(() => _isLogin = !_isLogin),
+                  child: Text(_isLogin ? 'Нет аккаунта? Регистрация' : 'Уже есть аккаунт? Войти'),
+                ),
+              ],
+            ),
           ),
         ),
       ),
