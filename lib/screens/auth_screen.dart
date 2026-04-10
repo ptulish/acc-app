@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import '../services/auth_service.dart'; // Не забудь создать этот файл
+import '../services/auth_repository.dart';
+import '../services/local_auth_service.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -13,41 +13,40 @@ class _AuthScreenState extends State<AuthScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _authService = AuthService();
+
+  // Работаем через интерфейс
+  final IAuthRepository _authService = LocalAuthService();
 
   bool _isLogin = true;
   bool _isLoading = false;
 
   Future<void> _submit() async {
-    // Валидация полей
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
 
-    try {
-      if (_isLogin) {
-        await _authService.signIn(
-          _emailController.text.trim(),
-          _passwordController.text.trim(),
-        );
-      } else {
-        await _authService.signUp(
-          _emailController.text.trim(),
-          _passwordController.text.trim(),
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+    bool success = false;
+
+    // Авторизация локально
+    if (_isLogin) {
+      success = await _authService.signIn(email, password);
+      if (!success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Неверный email или пароль')),
         );
       }
-    } on FirebaseAuthException catch (e) {
-      String message = 'Произошла ошибка';
-      if (e.code == 'user-not-found') message = 'Пользователь не найден';
-      else if (e.code == 'wrong-password') message = 'Неверный пароль';
-      else if (e.code == 'email-already-in-use') message = 'Этот Email уже занят';
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message ?? message)),
-      );
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    } else {
+      success = await _authService.signUp(email, password);
+      if (!success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Этот Email уже занят')),
+        );
+      }
     }
+
+    if (mounted) setState(() => _isLoading = false);
   }
 
   @override

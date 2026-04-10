@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/services.dart'; // Добавили импорт для работы с системными настройками
 
-import 'firebase_options.dart'; // Этот файл появится после flutterfire configure
-import 'screens/cards_screen.dart'; // Перенеси свой экран с карточками в этот файл
-import 'screens/auth_screen.dart';  // Это наш новый экран логина
-
+import 'screens/cards_screen.dart';
+import 'screens/auth_screen.dart';
+import 'services/local_auth_service.dart';
 
 void main() async {
-  // Обязательная строчка перед запуском Firebase
+  // Эта строка обязательна перед вызовом платформенных каналов (SystemChrome)
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Подключаемся к Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  // --- ЖЕСТКО ЗАДАЕМ ГОРИЗОНТАЛЬНУЮ ОРИЕНТАЦИЮ ---
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight,
+  ]);
+  // ----------------------------------------------
 
   runApp(const MyApp());
 }
@@ -31,7 +31,6 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
-      // Вместо жесткой ссылки на экран карточек, ставим "вратаря"
       home: const AuthGate(),
     );
   }
@@ -42,21 +41,14 @@ class AuthGate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(),
+    final authService = LocalAuthService();
+
+    return StreamBuilder<String?>(
+      stream: authService.onAuthStateChanged,
       builder: (context, snapshot) {
-        // ИСПРАВЛЕНО: тут должен быть snapshot
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
+        if (snapshot.hasData && snapshot.data != null) {
+          return CardsScreen(userEmail: snapshot.data!);
         }
-
-        // ИСПРАВЛЕНО: и тут тоже snapshot
-        if (snapshot.hasData) {
-          return const CardsScreen();
-        }
-
         return const AuthScreen();
       },
     );

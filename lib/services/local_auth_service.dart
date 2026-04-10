@@ -6,7 +6,14 @@ import 'dart:convert';
 import 'auth_repository.dart';
 
 class LocalAuthService implements IAuthRepository {
+  // --- Делаем класс Синглтоном ---
+  static final LocalAuthService _instance = LocalAuthService._internal();
+  factory LocalAuthService() => _instance;
+  LocalAuthService._internal();
+  // --------------------------------
+
   static Database? _db;
+  // Используем BehaviorSubject-подобный подход, сохраняем последнее состояние
   final _authController = StreamController<String?>.broadcast();
 
   @override
@@ -28,16 +35,15 @@ class LocalAuthService implements IAuthRepository {
   @override
   Future<bool> signUp(String email, String password) async {
     final db = await database;
-    // Хешируем пароль
     var bytes = utf8.encode(password);
     var digest = sha256.convert(bytes);
 
     try {
       await db.insert('users', {'email': email, 'password': digest.toString()});
-      _authController.add(email);
+      _authController.add(email); // Уведомляем систему, что мы вошли
       return true;
     } catch (e) {
-      return false; // Пользователь уже существует
+      return false; // Email уже существует
     }
   }
 
@@ -52,14 +58,14 @@ class LocalAuthService implements IAuthRepository {
         whereArgs: [email, digest.toString()]);
 
     if (maps.isNotEmpty) {
-      _authController.add(email);
+      _authController.add(email); // Уведомляем систему, что мы вошли
       return true;
     }
-    return false;
+    return false; // Неверный логин или пароль
   }
 
   @override
   Future<void> signOut() async {
-    _authController.add(null);
+    _authController.add(null); // Сбрасываем пользователя
   }
 }
