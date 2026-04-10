@@ -1,0 +1,218 @@
+[
+  {
+    "id": "f1",
+    "label": "Ābols",
+    "category": "Food",
+    "image_path": "🍎",
+    "is_custom": false,
+    "usage_count": 0
+  },
+  {
+    "id": "f2",
+    "label": "Maize",
+    "category": "Food",
+    "image_path": "🍞",
+    "is_custom": false,
+    "usage_count": 0
+  },
+  {
+    "id": "f3",
+    "label": "Piens",
+    "category": "Food",
+    "image_path": "🥛",
+    "is_custom": false,
+    "usage_count": 0
+  },
+  {
+    "id": "a1",
+    "label": "Iet",
+    "category": "Actions",
+    "image_path": "🚶",
+    "is_custom": false,
+    "usage_count": 0
+  },
+  {
+    "id": "a2",
+    "label": "Spēlēt",
+    "category": "Actions",
+    "image_path": "🧩",
+    "is_custom": false,
+    "usage_count": 0
+  },
+  {
+    "id": "a3",
+    "label": "Dzert",
+    "category": "Actions",
+    "image_path": "🥤",
+    "is_custom": false,
+    "usage_count": 0
+  },
+  {
+    "id": "n1",
+    "label": "Tualete",
+    "category": "Needs",
+    "image_path": "🚽",
+    "is_custom": false,
+    "usage_count": 0
+  },
+  {
+    "id": "n2",
+    "label": "Palīdzība",
+    "category": "Needs",
+    "image_path": "🆘",
+    "is_custom": false,
+    "usage_count": 0
+  },
+  {
+    "id": "n3",
+    "label": "Gribu gulēt",
+    "category": "Needs",
+    "image_path": "😴",
+    "is_custom": false,
+    "usage_count": 0
+  },
+  {
+    "id": "p1",
+    "label": "Mamma",
+    "category": "People",
+    "image_path": "👩",
+    "is_custom": false,
+    "usage_count": 0
+  },
+  {
+    "id": "p2",
+    "label": "Tētis",
+    "category": "People",
+    "image_path": "👨",
+    "is_custom": false,
+    "usage_count": 0
+  },
+  {
+    "id": "p3",
+    "label": "Draugs",
+    "category": "People",
+    "image_path": "👦",
+    "is_custom": false,
+    "usage_count": 0
+  },
+  {
+    "id": "e1",
+    "label": "Priecīgs",
+    "category": "Emotions",
+    "image_path": "😊",
+    "is_custom": false,
+    "usage_count": 0
+  },
+  {
+    "id": "e2",
+    "label": "Bēdīgs",
+    "category": "Emotions",
+    "image_path": "😢",
+    "is_custom": false,
+    "usage_count": 0
+  },
+  {
+    "id": "e3",
+    "label": "Dusmīgs",
+    "category": "Emotions",
+    "image_path": "😠",
+    "is_custom": false,
+    "usage_count": 0
+  },
+  {
+    "id": "pl1",
+    "label": "Mājas",
+    "category": "Places",
+    "image_path": "🏠",
+    "is_custom": false,
+    "usage_count": 0
+  },
+  {
+    "id": "pl2",
+    "label": "Skola",
+    "category": "Places",
+    "image_path": "🏫",
+    "is_custom": false,
+    "usage_count": 0
+  },
+  {
+    "id": "pl3",
+    "label": "Parks",
+    "category": "Places",
+    "image_path": "🌳",
+    "is_custom": false,
+    "usage_count": 0
+  },
+  {
+    "id": "num1",
+    "label": "Viens",
+    "category": "Numbers",
+    "image_path": "1️⃣",
+    "is_custom": false,
+    "usage_count": 0
+  },
+  {
+    "id": "num2",
+    "label": "Divi",
+    "category": "Numbers",
+    "image_path": "2️⃣",
+    "is_custom": false,
+    "usage_count": 0
+  },
+  {
+    "id": "num3",
+    "label": "Trīs",
+    "category": "Numbers",
+    "image_path": "3️⃣",
+    "is_custom": false,
+    "usage_count": 0
+  },
+  {
+    "id": "alph1",
+    "label": "A",
+    "category": "Alphabet",
+    "image_path": "🇦",
+    "is_custom": false,
+    "usage_count": 0
+  },
+  {
+    "id": "alph2",
+    "label": "B",
+    "category": "Alphabet",
+    "image_path": "🇧",
+    "is_custom": false,
+    "usage_count": 0
+  },
+  {
+    "id": "alph3",
+    "label": "C",
+    "category": "Alphabet",
+    "image_path": "🇨",
+    "is_custom": false,
+    "usage_count": 0
+  },
+  {
+    "id": "freq1",
+    "label": "Jā",
+    "category": "Frequently Used",
+    "image_path": "✅",
+    "is_custom": false,
+    "usage_count": 0
+  },
+  {
+    "id": "freq2",
+    "label": "Nē",
+    "category": "Frequently Used",
+    "image_path": "❌",
+    "is_custom": false,
+    "usage_count": 0
+  },
+  {
+    "id": "freq3",
+    "label": "Lūdzu",
+    "category": "Frequently Used",
+    "image_path": "🙏",
+    "is_custom": false,
+    "usage_count": 0
+  }
+]

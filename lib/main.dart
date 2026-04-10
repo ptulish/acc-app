@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // Добавили импорт для работы с системными настройками
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'screens/cards_screen.dart';
 import 'screens/auth_screen.dart';
@@ -16,7 +17,10 @@ void main() async {
   ]);
   // ----------------------------------------------
 
-  runApp(const MyApp());
+  runApp(const ProviderScope(
+      child: MyApp()
+    )
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -47,7 +51,8 @@ class AuthGate extends StatelessWidget {
       stream: authService.onAuthStateChanged,
       builder: (context, snapshot) {
         if (snapshot.hasData && snapshot.data != null) {
-          return CardsScreen(userEmail: snapshot.data!);
+          // Убрали userEmail, так как сейчас карточки грузятся у всех одинаково из JSON
+          return CardsScreen();
         }
         return const AuthScreen();
       },

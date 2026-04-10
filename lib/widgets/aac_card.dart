@@ -1,50 +1,66 @@
 import 'package:flutter/material.dart';
+import '../models/aac_card_model.dart';
 
 class AacCard extends StatelessWidget {
-  final String text;
-  final IconData? icon;
-  final Color? color;
+  final AacCardModel card;
+  final VoidCallback? onTap; // Callback для нажатия (добавление в строку)
 
   const AacCard({
     super.key,
-    required this.text,
-    this.icon,
-    this.color,
+    required this.card,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: color ?? Colors.white,
-      elevation: 4, // Красивая тень
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16), // Скругляем углы
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16), // Чтобы эффект нажатия тоже был скругленным
-        onTap: () {
-          // Здесь позже будет логика озвучки
-          print('Нажали на карточку: $text');
-        },
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Если иконка есть — показываем её
-            if (icon != null)
-              Icon(icon, size: 50, color: Colors.black87),
-
-            const SizedBox(height: 12), // Отступ между картинкой и текстом
-
-            // Текст карточки
-            Text(
-              text,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
+    return GestureDetector(
+      onTap: onTap,
+      child: Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          // Четкая граница помогает с фокусировкой внимания (важно для AAC)
+          side: BorderSide(color: Colors.blue.shade200, width: 2),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Картинка карточки
+              Expanded(
+                flex: 3,
+                child: Center(
+                  child: card.imagePath.length < 4 // Простая проверка: если строка короткая, значит это эмодзи
+                      ? Text(
+                    card.imagePath,
+                    style: const TextStyle(fontSize: 50), // Размер эмодзи
+                  )
+                      : Image.asset(
+                    card.imagePath,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) => const Icon(Icons.image, size: 40),
+                  ),
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 8),
+              // Текст карточки
+              Expanded(
+                flex: 1,
+                child: Text(
+                  card.label,
+                  style: const TextStyle(
+                    fontSize: 16, // Крупный и читаемый шрифт
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis, // Защита от слишком длинного текста
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
