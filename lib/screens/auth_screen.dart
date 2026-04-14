@@ -20,33 +20,38 @@ class _AuthScreenState extends State<AuthScreen> {
   bool _isLogin = true;
   bool _isLoading = false;
 
-  Future<void> _submit() async {
+  void _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+    });
 
-    final email = _emailController.text.trim();
-    final password = _passwordController.text.trim();
-    bool success = false;
-
-    // Авторизация локально
-    if (_isLogin) {
-      success = await _authService.signIn(email, password);
-      if (!success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Nepareizs e-pasts vai parole')), // Неверный email или пароль
+    try {
+      if (_isLogin) {
+        await _authService.signIn(
+          _emailController.text.trim(),
+          _passwordController.text.trim(),
+        );
+      } else {
+        await _authService.signUp(
+          _emailController.text.trim(),
+          _passwordController.text.trim(),
         );
       }
-    } else {
-      success = await _authService.signUp(email, password);
-      if (!success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Šis e-pasts jau tiek izmantots')), // Этот Email уже занят
-        );
+      // После успешного входа Navigator перенаправит пользователя
+      // благодаря стриму в main.dart (который мы настроим на следующем шаге)
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString())),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
       }
     }
-
-    if (mounted) setState(() => _isLoading = false);
   }
 
   @override
