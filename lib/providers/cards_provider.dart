@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/aac_card_model.dart';
 import '../services/database_helper.dart';
 import 'categories_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CardsLibraryNotifier extends AsyncNotifier<List<AacCardModel>> {
   @override
@@ -26,8 +27,11 @@ class CardsLibraryNotifier extends AsyncNotifier<List<AacCardModel>> {
   }
 
   Future<void> addCustomCard(AacCardModel newCard) async {
-    final userEmail = ref.read(authStateProvider).value;
-    if (userEmail == null) return; // Защита от сохранения "в пустоту"
+    // Читаем email напрямую из памяти
+    final prefs = await SharedPreferences.getInstance();
+    final userEmail = prefs.getString('user_email');
+
+    if (userEmail == null) return;
 
     final cardToSave = AacCardModel(
       id: newCard.id,
@@ -39,10 +43,14 @@ class CardsLibraryNotifier extends AsyncNotifier<List<AacCardModel>> {
       userId: userEmail,
     );
 
-    await DatabaseHelper.instance.insertCard(cardToSave.toMap());
-
-    if (state.hasValue) {
-      state = AsyncData([...state.value!, cardToSave]);
+    try {
+      await DatabaseHelper.instance.insertCard(cardToSave.toMap());
+      if (state.hasValue) {
+        state = AsyncData([...state.value!, cardToSave]);
+      }
+    } catch (e) {
+      print('Ошибка SQLite при сохранении карточки: $e');
+      rethrow;
     }
   }
 }

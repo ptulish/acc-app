@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/database_helper.dart';
 import '../services/local_auth_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // --- 1. Провайдер состояния авторизации ---
 final authStateProvider = StreamProvider<String?>((ref) {
@@ -75,11 +76,14 @@ class CategoriesNotifier extends Notifier<List<AacCategory>> {
   }
 
   Future<void> addCategory(AacCategory category) async {
-    // Теперь email точно будет известен
-    final userEmail = ref.read(authStateProvider).value;
+    // Читаем email напрямую из памяти (100% надежно)
+    final prefs = await SharedPreferences.getInstance();
+    final userEmail = prefs.getString('user_email');
 
-    // Защита: если юзера нет, ничего не делаем (чтобы не сломать БД)
-    if (userEmail == null) return;
+    if (userEmail == null) {
+      print('Ошибка: email пользователя равен null');
+      return;
+    }
 
     final newCat = AacCategory(
       category.id,
@@ -89,8 +93,13 @@ class CategoriesNotifier extends Notifier<List<AacCategory>> {
       userId: userEmail,
     );
 
-    await DatabaseHelper.instance.insertCategory(newCat.toMap());
-    state = [...state, newCat];
+    try {
+      await DatabaseHelper.instance.insertCategory(newCat.toMap());
+      state = [...state, newCat];
+    } catch (e) {
+      print('Ошибка SQLite при сохранении категории: $e');
+      rethrow; // Пробрасываем ошибку в интерфейс
+    }
   }
 }
 

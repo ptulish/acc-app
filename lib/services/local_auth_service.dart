@@ -3,6 +3,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart'; // <--- ДОБАВЛЕН ИМПОРТ
 import 'auth_repository.dart';
 
 class LocalAuthService implements IAuthRepository {
@@ -40,6 +41,11 @@ class LocalAuthService implements IAuthRepository {
 
     try {
       await db.insert('users', {'email': email, 'password': digest.toString()});
+
+      // ДОБАВЛЕНО: Сохраняем email в память устройства
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_email', email);
+
       _authController.add(email); // Уведомляем систему, что мы вошли
       return true;
     } catch (e) {
@@ -58,6 +64,11 @@ class LocalAuthService implements IAuthRepository {
         whereArgs: [email, digest.toString()]);
 
     if (maps.isNotEmpty) {
+
+      // ДОБАВЛЕНО: Сохраняем email в память устройства
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_email', email);
+
       _authController.add(email); // Уведомляем систему, что мы вошли
       return true;
     }
@@ -66,6 +77,10 @@ class LocalAuthService implements IAuthRepository {
 
   @override
   Future<void> signOut() async {
+    // ДОБАВЛЕНО: Очищаем email из памяти при выходе
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('user_email');
+
     _authController.add(null); // Сбрасываем пользователя
   }
 }

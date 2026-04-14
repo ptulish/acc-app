@@ -34,14 +34,14 @@ class _AuthScreenState extends State<AuthScreen> {
       success = await _authService.signIn(email, password);
       if (!success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Неверный email или пароль')),
+          const SnackBar(content: Text('Nepareizs e-pasts vai parole')), // Неверный email или пароль
         );
       }
     } else {
       success = await _authService.signUp(email, password);
       if (!success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Этот Email уже занят')),
+          const SnackBar(content: Text('Šis e-pasts jau tiek izmantots')), // Этот Email уже занят
         );
       }
     }
@@ -61,22 +61,22 @@ class _AuthScreenState extends State<AuthScreen> {
               children: [
                 Icon(Icons.record_voice_over, size: 80, color: Theme.of(context).primaryColor),
                 const SizedBox(height: 30),
-                Text(_isLogin ? 'Вход' : 'Регистрация', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                Text(_isLogin ? 'Pieslēgties' : 'Reģistrācija', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)), // Вход : Регистрация
                 const SizedBox(height: 30),
 
                 TextFormField(
                   controller: _emailController,
-                  decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(labelText: 'E-pasts', border: OutlineInputBorder()), // Email
                   keyboardType: TextInputType.emailAddress,
-                  validator: (value) => value == null || !value.contains('@') ? 'Введите корректный email' : null,
+                  validator: (value) => value == null || !value.contains('@') ? 'Ievadiet derīgu e-pastu' : null, // Введите корректный email
                 ),
                 const SizedBox(height: 16),
 
                 TextFormField(
                   controller: _passwordController,
-                  decoration: const InputDecoration(labelText: 'Пароль', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(labelText: 'Parole', border: OutlineInputBorder()), // Пароль
                   obscureText: true,
-                  validator: (value) => value == null || value.length < 6 ? 'Пароль должен быть от 6 символов' : null,
+                  validator: (value) => value == null || value.length < 6 ? 'Parolei jābūt vismaz 6 simbolus garai' : null, // Пароль должен быть от 6 символов
                 ),
                 const SizedBox(height: 24),
 
@@ -85,12 +85,12 @@ class _AuthScreenState extends State<AuthScreen> {
                     : ElevatedButton(
                   onPressed: _submit,
                   style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 50)),
-                  child: Text(_isLogin ? 'Войти' : 'Создать аккаунт'),
+                  child: Text(_isLogin ? 'Pieslēgties' : 'Izveidot kontu'), // Войти : Создать аккаунт
                 ),
 
                 TextButton(
                   onPressed: () => setState(() => _isLogin = !_isLogin),
-                  child: Text(_isLogin ? 'Нет аккаунта? Регистрация' : 'Уже есть аккаунт? Войти'),
+                  child: Text(_isLogin ? 'Nav konta? Reģistrēties' : 'Jau ir konts? Pieslēgties'), // Нет аккаунта? Регистрация : Уже есть аккаунт? Войти
                 ),
               ],
             ),

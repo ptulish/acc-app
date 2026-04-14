@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-// 1. ИМПОРТ ПАКЕТА ВЫБОРА ЦВЕТА
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import '../providers/categories_provider.dart';
 
@@ -17,10 +16,9 @@ class _CreateCategoryDialogState extends ConsumerState<CreateCategoryDialog> {
   final _formKey = GlobalKey<FormState>();
   final _labelController = TextEditingController();
 
-  // 2. ОБНОВЛЕННАЯ ПАЛИТРА: Добавили Colors.cyan
   final List<Color> _availableColors = [
     Colors.red, Colors.orange, Colors.yellow.shade700, Colors.green,
-    Colors.teal, Colors.cyan, // <- Новый стандартный цвет
+    Colors.teal, Colors.cyan,
     Colors.blue, Colors.indigo, Colors.purple,
     Colors.pinkAccent, Colors.brown, Colors.blueGrey, Colors.grey
   ];
@@ -29,56 +27,60 @@ class _CreateCategoryDialogState extends ConsumerState<CreateCategoryDialog> {
   @override
   void initState() {
     super.initState();
-    _selectedColor = _availableColors.first; // По умолчанию Красный
+    _selectedColor = _availableColors.first;
   }
 
-  void _saveCategory() {
+  void _saveCategory() async {
     if (_formKey.currentState!.validate()) {
       final newLabel = _labelController.text.trim();
 
       final newCategory = AacCategory(
-        'custom_cat_${DateTime.now().millisecondsSinceEpoch}', // Генерируем ID
-        newLabel.toUpperCase(), // Категории у нас капсом
+        'custom_cat_${DateTime.now().millisecondsSinceEpoch}',
+        newLabel.toUpperCase(),
         _selectedColor,
       );
 
-      ref.read(categoriesProvider.notifier).addCategory(newCategory);
-      Navigator.of(context).pop();
+      try {
+        await ref.read(categoriesProvider.notifier).addCategory(newCategory);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Kategorija izveidota veiksmīgi!'), backgroundColor: Colors.green),
-      );
+        if (mounted) {
+          Navigator.of(context).pop();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Kategorija izveidota veiksmīgi!'), backgroundColor: Colors.green),
+          );
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Kļūda saglabājot: $e'), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 
-  // 3. НОВАЯ ФУНКЦИЯ: Показывает диалог выбора произвольного цвета
   void _pickCustomColor() {
-    Color tempColor = _selectedColor; // Временная переменная для выбора
+    Color tempColor = _selectedColor;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Izvēlieties savu krāsu'), // "Выберите свой цвет"
+        title: const Text('Izvēlieties savu krāsu'),
         content: SingleChildScrollView(
           child: ColorPicker(
-            pickerColor: tempColor, // Начальный цвет в пикере
+            pickerColor: tempColor,
             onColorChanged: (color) {
-              tempColor = color; // Обновляем временную переменную
+              tempColor = color;
             },
-            showLabel: true, // Показывать HEX-код
+            showLabel: true,
             pickerAreaHeightPercent: 0.8,
           ),
         ),
         actions: <Widget>[
           TextButton(
-            child: const Text('Atcelt'), // "Отмена"
-            onPressed: () {
-              Navigator.of(context).pop(); // Просто закрываем диалог
-            },
+            child: const Text('Atcelt'),
+            onPressed: () => Navigator.of(context).pop(),
           ),
           ElevatedButton(
-            child: const Text('Labi'), // "ОК"
+            child: const Text('Labi'),
             onPressed: () {
-              // Сохраняем выбранный цвет и закрываем диалог пикера
               setState(() {
                 _selectedColor = tempColor;
               });
@@ -101,90 +103,96 @@ class _CreateCategoryDialogState extends ConsumerState<CreateCategoryDialog> {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       elevation: 5,
-      child: Container(
-        width: 400,
-        padding: const EdgeInsets.all(24),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Center(
-                child: Text('Jaunas kategorijas izveide', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-              ),
-              const SizedBox(height: 24),
-
-              TextFormField(
-                controller: _labelController,
-                decoration: InputDecoration(
-                  labelText: 'Nosaukums (piem., Rotaļlietas)', // Название
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  prefixIcon: const Icon(Icons.category),
+      child: SingleChildScrollView(
+        child: Container(
+          // ОГРАНИЧИВАЕМ ширину, а не задаем жестко
+          constraints: const BoxConstraints(maxWidth: 400),
+          padding: const EdgeInsets.all(24),
+        // ДОБАВЛЕН скролл для защиты от клавиатуры
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Center(
+                  child: Text(
+                    'Jaunas kategorijas izveide',
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
-                validator: (value) => value == null || value.isEmpty ? 'Ievadiet nosaukumu' : null,
-              ),
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              const Text('Izvēлиeties krāsu:', style: TextStyle(fontSize: 16, color: Colors.grey)), // Выберите цвет
-              const SizedBox(height: 12),
+                TextFormField(
+                  controller: _labelController,
+                  decoration: InputDecoration(
+                    labelText: 'Nosaukums (piem., Rotaļlietas)',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    prefixIcon: const Icon(Icons.category),
+                  ),
+                  validator: (value) => value == null || value.isEmpty ? 'Ievadiet nosaukumu' : null,
+                ),
+                const SizedBox(height: 24),
 
-              // 4. ОБНОВЛЕННАЯ ПАЛИТРА ЦВЕТОВ: С кнопкой '+'
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: [
-                  // 1. Рисуем кружочки стандартных цветов
-                  ..._availableColors.map((color) {
-                    final isSelected = _selectedColor == color;
-                    return GestureDetector(
-                      onTap: () => setState(() => _selectedColor = color),
-                      child: CircleAvatar(
-                        backgroundColor: color,
-                        radius: 20,
-                        child: isSelected ? const Icon(Icons.check, color: Colors.white) : null,
+                const Text('Izvēlieties krāsu:', style: TextStyle(fontSize: 16, color: Colors.grey)),
+                const SizedBox(height: 12),
+
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    ..._availableColors.map((color) {
+                      final isSelected = _selectedColor == color;
+                      return GestureDetector(
+                        onTap: () => setState(() => _selectedColor = color),
+                        child: CircleAvatar(
+                          backgroundColor: color,
+                          radius: 20,
+                          child: isSelected ? const Icon(Icons.check, color: Colors.white) : null,
+                        ),
+                      );
+                    }).toList(),
+
+                    GestureDetector(
+                      onTap: _pickCustomColor,
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade200,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.grey.shade400, width: 2),
+                        ),
+                        child: const Icon(Icons.add, color: Colors.grey, size: 28),
                       ),
-                    );
-                  }).toList(),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 32),
 
-                  // 2. НОВОЕ: Добавляем кнопку '+' для произвольного цвета
-                  GestureDetector(
-                    onTap: _pickCustomColor,
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.grey.shade400, width: 2),
+                // Кнопки всегда сжимаются под размер экрана
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text('Atcelt', style: TextStyle(fontSize: 16)),
                       ),
-                      child: const Icon(Icons.add, color: Colors.grey, size: 28),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 32),
-
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Atcelt', style: TextStyle(fontSize: 16)),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                        onPressed: _saveCategory,
+                        child: const Text('Izveidot', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                      onPressed: _saveCategory,
-                      child: const Text('Izveidot', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

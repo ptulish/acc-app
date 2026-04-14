@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/aac_card_model.dart';
 import '../providers/cards_provider.dart';
 import '../providers/categories_provider.dart';
-import 'aac_card.dart'; // Виджет карточки для предпросмотра
+import 'aac_card.dart';
 
 class CreateCardDialog extends ConsumerStatefulWidget {
   final String initialCategory;
@@ -25,7 +25,6 @@ class _CreateCardDialogState extends ConsumerState<CreateCardDialog> {
   final _emojiController = TextEditingController();
 
   late String _selectedCategory;
-  // ИЗМЕНЕНО: Инициализируем пустой строкой, без заглушки '❓'
   String _currentEmoji = '';
 
   @override
@@ -35,34 +34,41 @@ class _CreateCardDialogState extends ConsumerState<CreateCardDialog> {
     _emojiController.addListener(_onEmojiChanged);
   }
 
-  // ИЗМЕНЕНО: Просто обновляем эмодзи, не подставляя заглушку, если поле пустое
   void _onEmojiChanged() {
     setState(() {
       _currentEmoji = _emojiController.text.trim();
     });
   }
 
-  void _saveCard() {
+  void _saveCard() async {
     if (_formKey.currentState!.validate()) {
       final newCard = AacCardModel(
         id: 'custom_${DateTime.now().millisecondsSinceEpoch}',
         label: _labelController.text.trim(),
         category: _selectedCategory,
-        imagePath: _emojiController.text.trim(),
+        imagePath: _currentEmoji,
         isCustom: true,
         usageCount: 0,
       );
 
-      ref.read(cardsLibraryProvider.notifier).addCustomCard(newCard);
-      Navigator.of(context).pop();
+      try {
+        await ref.read(cardsLibraryProvider.notifier).addCustomCard(newCard);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Kartīte izveidota veiksmīgi!'),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
-        ),
-      );
+        if (mounted) {
+          Navigator.of(context).pop();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Kartīte izveidota veiksmīgi!'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Kļūda saglabājot: $e'), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 
@@ -78,153 +84,152 @@ class _CreateCardDialogState extends ConsumerState<CreateCardDialog> {
   Widget build(BuildContext context) {
     final categoriesList = ref.watch(categoriesProvider);
 
+    // Определяем ширину экрана. Если меньше 600px - считаем, что это телефон
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+
+    // Выносим поля ввода в отдельную переменную для чистоты кода
+    final formFields = Column(
+      children: [
+        TextFormField(
+          controller: _labelController,
+          decoration: InputDecoration(
+            labelText: 'Nosaukums (piem., Sula)',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            prefixIcon: const Icon(Icons.text_fields),
+          ),
+          validator: (value) => value == null || value.isEmpty ? 'Ievadiet nosaukumu' : null,
+          onChanged: (_) => setState(() {}),
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _emojiController,
+          decoration: InputDecoration(
+            labelText: 'Emocijzīme (piem., 🧃)',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            prefixIcon: const Icon(Icons.emoji_emotions_outlined),
+          ),
+          validator: (value) => value == null || value.isEmpty ? 'Ievadiet emocijzīmi' : null,
+        ),
+        const SizedBox(height: 16),
+        DropdownButtonFormField<String>(
+          value: _selectedCategory,
+          decoration: InputDecoration(
+            labelText: 'Kategorija',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            prefixIcon: const Icon(Icons.category_outlined),
+          ),
+          items: categoriesList.map((category) {
+            return DropdownMenuItem(
+              value: category.id,
+              child: Text(category.label),
+            );
+          }).toList(),
+          onChanged: (value) {
+            setState(() {
+              if (value != null) _selectedCategory = value;
+            });
+          },
+        ),
+      ],
+    );
+
+    // Выносим предпросмотр в отдельную переменную
+    final previewSection = Column(
+      children: [
+        const Text(
+          'Priekšskatījums:',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.grey),
+        ),
+        const SizedBox(height: 12),
+        Center(
+          child: SizedBox(
+            width: 140, // На телефоне сделаем чуть компактнее
+            height: 160,
+            child: AacCard(
+              card: AacCardModel(
+                id: 'preview',
+                label: _labelController.text.trim(),
+                category: _selectedCategory,
+                imagePath: _currentEmoji,
+                isCustom: true,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       elevation: 5,
-      child: Container(
-        // ИЗМЕНЕНО: Увеличим ширину диалога, чтобы вместить поля слева и предпросмотр справа
-        width: 750,
-        padding: const EdgeInsets.all(24),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min, // Окно занимает только нужное место по вертикали
-            children: [
-              // Заголовок (всегда сверху по центру)
-              const Text(
-                'Jaunas kartītes izveide',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 32),
+      child: SingleChildScrollView(
+        child: Container(
+          // Используем BoxConstraints: на планшете будет до 750, на телефоне сожмется под экран
+          constraints: const BoxConstraints(maxWidth: 750),
+          padding: const EdgeInsets.all(24),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Jaunas kartītes izveide',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
 
-              // ==========================================
-              // ИЗМЕНЕНО: Горизонтальная разметка (Форма слева, Предпросмотр справа)
-              // ==========================================
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start, // Выравнивание по верху
-                children: [
-                  // --- ЛЕВАЯ ЧАСТЬ: Поля ввода ---
-                  Expanded(
-                    flex: 3, // Занимает больше места
-                    child: Column(
-                      children: [
-                        TextFormField(
-                          controller: _labelController,
-                          decoration: InputDecoration(
-                            labelText: 'Nosaukums (piem., Sula)',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                            prefixIcon: const Icon(Icons.text_fields),
-                          ),
-                          validator: (value) => value == null || value.isEmpty ? 'Ievadiet nosaukumu' : null,
-                          // Обновляем предпросмотр названия при вводе
-                          onChanged: (_) => setState(() {}),
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _emojiController,
-                          decoration: InputDecoration(
-                            labelText: 'Emocijzīme (piem., 🧃)',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                            prefixIcon: const Icon(Icons.emoji_emotions_outlined),
-                          ),
-                          validator: (value) => value == null || value.isEmpty ? 'Ievadiet emocijzīmi' : null,
-                        ),
-                        const SizedBox(height: 16),
-                        DropdownButtonFormField<String>(
-                          value: _selectedCategory,
-                          decoration: InputDecoration(
-                            labelText: 'Kategorija',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                            prefixIcon: const Icon(Icons.category_outlined),
-
-                          ),
-                          items: categoriesList.map((category) {
-                            return DropdownMenuItem(
-                              value: category.id,
-                              child: Text(category.label),
-                            );
-                          }).toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              if (value != null) _selectedCategory = value;
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(width: 32), // Пространство между колонками
-
-                  // --- ПРАВАЯ ЧАСТЬ: Предпросмотр ---
-                  Expanded(
-                    flex: 2, // Занимает меньше места
-                    child: Column(
-                      children: [
-                        const Text(
-                          'Priekšskatījums:', // "Предпросмотр"
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.grey),
-                        ),
-                        const SizedBox(height: 16),
-                        Center(
-                          child: SizedBox(
-                            width: 150, // Чуть увеличим размер карточки предпросмотра
-                            height: 170,
-                            child: AacCard(
-                              // ИЗМЕНЕНО: Временная модель БЕЗ заглушек. Используем чистые данные.
-                              card: AacCardModel(
-                                id: 'preview',
-                                label: _labelController.text.trim(), // Пусто, если поле пустое
-                                category: _selectedCategory,
-                                imagePath: _currentEmoji, // Пусто, если поле пустое
-                                isCustom: true,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                // АДАПТИВНАЯ РАЗМЕТКА
+                if (isMobile) ...[
+                  // Для телефона: Предпросмотр сверху, поля снизу
+                  previewSection,
+                  const SizedBox(height: 24),
+                  formFields,
+                ] else ...[
+                  // Для планшета: Форма слева, предпросмотр справа
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(flex: 3, child: formFields),
+                      const SizedBox(width: 32),
+                      Expanded(flex: 2, child: previewSection),
+                    ],
                   ),
                 ],
-              ),
 
-              const SizedBox(height: 40),
+                const SizedBox(height: 32),
 
-              // ==========================================
-              // Кнопки (Отмена / Создать)
-              // (всегда снизу по центру)
-              // ==========================================
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center, // Центрируем кнопки
-                children: [
-                  SizedBox(
-                    width: 160,
-                    child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                // Адаптивные кнопки
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text('Atcelt', style: TextStyle(fontSize: 16)),
                       ),
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Atcelt', style: TextStyle(fontSize: 16)),
                     ),
-                  ),
-                  const SizedBox(width: 24),
-                  SizedBox(
-                    width: 160,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blueAccent,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    const SizedBox(width: 16), // Чуть уменьшили отступ для узких экранов
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blueAccent,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        onPressed: _saveCard,
+                        child: const Text('Izveidot', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                       ),
-                      onPressed: _saveCard,
-                      child: const Text('Izveidot', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
